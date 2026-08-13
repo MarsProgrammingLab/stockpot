@@ -1,1 +1,1 @@
-# StockPot - Kitchen Inventory Manager Project Overview
+# StockPot - Kitchen Inventory Manager Overview
