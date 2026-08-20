@@ -10,8 +10,7 @@ import java.util.List;
 public interface InventoryRepository extends JpaRepository<InventoryItem, Long> {
     // Spring Data JPA will parse the below method name by findBy + column name
     // Spring Data JPA will then generate a query filtering  on the column field and implement it at runtime
-
-    // Generates: WHERE category = ?
+    // findByCategory Generates: WHERE category = ?
     List<InventoryItem> findByCategory(Category category);
     List<InventoryItem> findByStorageLocation(StorageLocation storageLocation);
     List<InventoryItem> findByName(String name);
