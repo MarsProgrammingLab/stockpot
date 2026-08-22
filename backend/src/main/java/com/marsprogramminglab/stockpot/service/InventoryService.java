@@ -1,6 +1,8 @@
 package com.marsprogramminglab.stockpot.service;
 
 import com.marsprogramminglab.stockpot.entity.*;
+import com.marsprogramminglab.stockpot.exception.InvalidQuantityUpdateException;
+import com.marsprogramminglab.stockpot.exception.ItemNotFoundException;
 import com.marsprogramminglab.stockpot.repository.InventoryRepository;
 import org.springframework.stereotype.Service;
 
@@ -27,7 +29,7 @@ public class InventoryService {
     public InventoryItem findById(Long id) {
         // .orElseThrow with lambda to construct and return exception only when item doesn't exist
         return inventoryRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Item not found with id: " + id));
+                .orElseThrow(() -> new ItemNotFoundException("Item not found with id: " + id));
     }
 
 
@@ -48,7 +50,7 @@ public class InventoryService {
 
     public void deleteById(Long id) {
         if (!inventoryRepository.existsById(id)) {
-            throw new RuntimeException("Item not found with id: " + id);
+            throw new ItemNotFoundException("Item not found with id: " + id);
         }
         inventoryRepository.deleteById(id);
     }
@@ -63,7 +65,7 @@ public class InventoryService {
         int newQuantity = item.getQuantity() + difference;
 
         if (newQuantity < 0) {
-            throw new IllegalStateException("Quantity cannot be negative: " + newQuantity);
+            throw new InvalidQuantityUpdateException("Quantity cannot be negative: " + newQuantity);
         } else {
             item.setQuantity(newQuantity);
         }

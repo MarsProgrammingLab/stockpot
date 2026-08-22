@@ -1,11 +1,18 @@
 package com.marsprogramminglab.stockpot.controller;
 
+import com.marsprogramminglab.stockpot.dto.StockStatus;
+import com.marsprogramminglab.stockpot.entity.Category;
 import com.marsprogramminglab.stockpot.entity.InventoryItem;
+import com.marsprogramminglab.stockpot.entity.StorageLocation;
+import com.marsprogramminglab.stockpot.exception.MultipleFiltersAppliedException;
 import com.marsprogramminglab.stockpot.service.InventoryService;
+import com.marsprogramminglab.stockpot.dto.QuantityUpdateRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Objects;
+import java.util.stream.Stream;
 
 
 @RestController
@@ -25,15 +32,28 @@ public class InventoryController {
 
     // GET /api/items -> findAll()
     @GetMapping
-    List<InventoryItem> findAll() {
-        return inventoryService.findAll();
+    List<InventoryItem> search(@RequestParam(required = false) Category category,
+                               @RequestParam(required = false) StorageLocation location,
+                               @RequestParam(required = false) String name) {
+
+        long providedFilters = Stream.of(category, location, name)
+                .filter(Objects::nonNull)
+                .count();
+
+        if (providedFilters > 1) {
+            throw new MultipleFiltersAppliedException("Only one filter parameter may be supplied at a time.");
+        }
+
+        if (category != null) {
+            return inventoryService.findByCategory(category);
+        } else if (location != null) {
+            return inventoryService.findByStorageLocation(location);
+        } else if (name != null) {
+            return inventoryService.findByName(name);
+        } else {
+            return inventoryService.findAll();
+        }
     }
-
-    // GET /api/items?category=X   → findByCategory(X)
-
-    // GET /api/items?location=X   → findByStorageLocation(X)
-
-    // GET /api/items?name=X       → findByName(X)
 
     // POST /api/items save(id)
     @PostMapping
@@ -49,6 +69,16 @@ public class InventoryController {
     }
 
     // PATCH /api/items/{id}/quantity updateQuantity(id, difference)
+    @PatchMapping("/{id}/quantity")
+    InventoryItem updateQuantity(@PathVariable Long id, @RequestBody QuantityUpdateRequest request) {
+        return inventoryService.updateQuantity(id, request.difference());
+    }
 
     // GET /api/items/{id}/low-stock?minimumQuantity=X
+    @GetMapping("/{id}/low-stock")
+    StockStatus checkStockStatus(@PathVariable Long id, @RequestParam int minimumQuantity) {
+        boolean low = inventoryService.isStockLow(id, minimumQuantity);
+        int currentQuantity = inventoryService.findById(id).getQuantity();
+        return new StockStatus(low, currentQuantity, minimumQuantity);
+    }
 }
